@@ -16,8 +16,8 @@ app.use(cors({
 
 app.use(express.json({ strict: false }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/api/auth', authRoutes);
-app.use('/api/todo', todoRoutes);
+app.use('/auth', authRoutes);
+app.use('/todo', todoRoutes);
 
 app.get('/', (req, res)=>{
     res.send("Hello from server!!")

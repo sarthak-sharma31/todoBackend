@@ -1,4 +1,5 @@
 import { User } from "../models/user.models.js";
+import { Team } from "../models/team.models.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 
@@ -19,7 +20,7 @@ const registerUser = async (req, res) => {
             email: email.toLowerCase(),
             password: hashedPassword,
         });
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '24hr' });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
         return res.status(200).json({ message: `User created successfully: name:${name}, email = ${email}`, token });
     } catch (error) {
@@ -40,7 +41,7 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-        const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: '24hr' });
+        const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
         return res.status(200).json({ message: "Login Success!", token, user: { id: existingUser._id, name: existingUser.name, email: existingUser.email } });
     } catch (error) {
@@ -65,5 +66,82 @@ const getUser = async (req, res) => {
         return res.status(500).json({ status: 500, message: 'Internal Server Error', error });
     }
 }
+/* ===================== CREATE TEAM ===================== */
+const createTeam = async (req, res) => {
+  try {
+    if (req.user.team) {
+      return res.status(400).json({ message: "You already belong to a team" });
+    }
 
-export { registerUser, loginUser, getUser }
+    const team = await Team.create({
+      name: req.body.name,
+      owner: req.user.id,
+      members: [req.user.id]
+    });
+
+    await User.findByIdAndUpdate(req.user.id, { team: team._id });
+
+    res.status(201).json({ message: "Team created", team });
+
+  } catch (error) {
+    res.status(500).json({ message: "Failed to create team" });
+  }
+};
+
+/* ===================== ADD USER TO TEAM ===================== */
+const addUserToTeam = async (req, res) => {
+  try {
+    const team = await Team.findById(req.user.team);
+
+    if (!team || team.owner.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Only team owner can add users" });
+    }
+
+    const { userId } = req.body;
+
+    if (team.members.includes(userId)) {
+      return res.status(400).json({ message: "User already in team" });
+    }
+
+    team.members.push(userId);
+    await team.save();
+
+    await User.findByIdAndUpdate(userId, { team: team._id });
+
+    res.status(200).json({ message: "User added to team" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add user to team" });
+  }
+};
+
+const getTeamMembers = async (req, res) => {
+  try {
+    if (!req.user.team) {
+      return res.status(400).json({ message: "You are not part of any team" });
+    }
+
+    const team = await Team.findById(req.user.team)
+      .populate("members", "name email")
+      .populate("owner", "name email");
+
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    res.status(200).json({
+      teamName: team.name,
+      owner: team.owner,
+      members: team.members
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch team members" });
+  }
+};
+
+export { registerUser, loginUser, getUser, createTeam, addUserToTeam, getTeamMembers }
+
+// "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Nzg4NzQxZDI4NjU5MGIxYzk2NDk3MyIsImlhdCI6MTc2OTUwNjYyNSwiZXhwIjoxNzY5NTkzMDI1fQ.poZ8YwCPk0FhMiYuwGOw6PxsL5BQUZNx_9F-C8naOp0"    69788741d286590b1c964973
+
+// "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Nzg4NzVlOGI3MTk5ZThmODE2NjU0NiIsImlhdCI6MTc2OTUwNjY1NCwiZXhwIjoxNzY5NTkzMDU0fQ.aWgcDHsTFE6dscF4GhYMdgdKev_-EDTKofDOlYtCz3U"    6978875e8b7199e8f8166546

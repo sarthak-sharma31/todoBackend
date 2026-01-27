@@ -5,22 +5,37 @@ const todoSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  description: {
-    type: String
-  },
-  isCompleted: {
+
+  description: String,
+
+  isCompleted:{
     type: Boolean,
     default: false
   },
-  inProgress:{
-    type: Boolean,
-    default: false
-  },
-  user: {
+
+  createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true
-  }
-}, {timestamps: true});
+  },
 
-export const Todo =  mongoose.model("Todo", todoSchema);
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+
+  priority: {
+    type: Number,
+    min: 1,
+    max: 4,
+    default: 4
+  },
+
+  dueDate: {
+    type: Date
+  }
+
+}, { timestamps: true });
+
+export const Todo = mongoose.model("Todo", todoSchema);
