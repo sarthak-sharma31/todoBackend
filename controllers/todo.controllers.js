@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Todo } from "../models/task.models.js";
 import { Team } from "../models/team.models.js";
 
-/* ===================== CREATE TODO ===================== */
+
 const createTodo = async (req, res) => {
   try {
     const { title, description, assignedTo, priority, dueDate } = req.body;
@@ -41,7 +41,6 @@ const createTodo = async (req, res) => {
   }
 };
 
-/* ===================== GET TODOS ===================== */
 const getTodos = async (req, res) => {
   try {
     let filter = {};
@@ -81,7 +80,6 @@ const getTodos = async (req, res) => {
   }
 };
 
-/* ===================== UPDATE TODO ===================== */
 const updateTodo = async (req, res) => {
   try {
     const todo = await Todo.findOne({
@@ -103,7 +101,6 @@ const updateTodo = async (req, res) => {
   }
 };
 
-/* ===================== DELETE TODO ===================== */
 const deleteTodo = async (req, res) => {
   try {
     const todo = await Todo.findOneAndDelete({

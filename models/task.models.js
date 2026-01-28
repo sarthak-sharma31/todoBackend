@@ -13,6 +13,11 @@ const todoSchema = new mongoose.Schema({
     default: false
   },
 
+  inProgress:{
+    type: Boolean,
+    default: false
+  },
+
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
