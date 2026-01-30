@@ -43,39 +43,14 @@ const createTodo = async (req, res) => {
 
 const getTodos = async (req, res) => {
   try {
-    let filter = {};
-
-    if (req.user.team) {
-      const team = await Team.findById(req.user.team);
-      const isOwner = team.owner.toString() === req.user.id;
-
-      // Owner sees everything in team
-      if (!isOwner) {
-        filter = {
-          $or: [
-            { assignedTo: req.user.id },
-            { createdBy: req.user.id }
-          ]
-        };
-      }
-    } else {
-      // User without team
-      filter = {
-        $or: [
-          { assignedTo: req.user.id },
-          { createdBy: req.user.id }
-        ]
-      };
-    }
-
-    const todos = await Todo.find(filter)
+    const todos = await Todo.find({ createdBy: req.user.id })
       .populate("createdBy", "name email")
       .populate("assignedTo", "name email")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ todos });
-
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Failed to fetch todos" });
   }
 };
